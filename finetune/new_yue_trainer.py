@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
 import argparse
 import os
@@ -10,8 +9,8 @@ import time
 import tempfile
 
 # --- ИСПРАВЛЕНИЕ: Импортируем из исправленных модулей ---
-from finetune.pipeline.new_config import create_pipeline_config
-from finetune.pipeline.new_steps import (
+from pipeline.new_config import create_pipeline_config
+from pipeline.new_steps import (
     AudioConverter,
     DataPreprocessor,
     DatasetPreparer,
@@ -85,8 +84,8 @@ class YuETrainer:
         preprocess_parser.add_argument('--data-dir', required=True, help='Директория с *.npy')
         preprocess_parser.add_argument('--output-dir', help='Куда писать выходные файлы')
         preprocess_parser.add_argument('--config', help='Путь к mixture_cfg.yml (если есть)')
-        preprocess_parser.add_argument('--codec-type', default='xcodec_16k')
-        preprocess_parser.add_argument('--num-codebooks', type=int, default=4)
+        preprocess_parser.add_argument('--codec-type', default='semanticodec')
+        preprocess_parser.add_argument('--num-codebooks', type=int, default=2)
         preprocess_parser.add_argument('--workers', type=int, default=4)
         preprocess_parser.add_argument('--stage', default='both', help='Этап XCodec (encode/decode/both)')
         preprocess_parser.add_argument('--shuffle', action='store_true')
@@ -150,7 +149,7 @@ class YuETrainer:
         # --------------------------------------------------
         pipeline_parser = subparsers.add_parser('pipeline', help='Запуск всех шагов последовательно')
         pipeline_parser.add_argument('--input-dir', required=True, help='Директория с исходными аудио файлами')
-        pipeline_parser.add_argument('--model', required=True, help='Путь к исходной модели или хаб-имя')
+        pipeline_parser.add_argument('--model', help='Путь к исходной модели или хаб-имя (требуется только для обучения)')
         pipeline_parser.add_argument('--output-dir', help='Директория для результатов')
         pipeline_parser.add_argument('--config', help='Пользовательский файл mixture_cfg.yml')
         pipeline_parser.add_argument('--pipeline-config', help='Путь к JSON-файлу с конфигурацией пайплайна')
@@ -334,6 +333,12 @@ class YuETrainer:
         logger.info("Запуск полного пайплайна обработки и обучения...")
         
         try:
+            # Проверяем наличие модели только если нужен шаг обучения
+            skip_steps = args.skip_steps or []
+            if 'train' not in skip_steps and not args.model:
+                logger.error("Аргумент --model обязателен для шага обучения. Укажите модель или пропустите шаг обучения с помощью --skip-steps train")
+                sys.exit(1)
+            
             if not args.output_dir:
                 args.output_dir = os.path.join(os.getcwd(), "yue_pipeline_output")
             os.makedirs(args.output_dir, exist_ok=True)
@@ -570,6 +575,14 @@ class YuETrainer:
             if 'train' not in skip_steps:
                 try:
                     logger.info("Шаг 5: Запуск обучения")
+                    if not args.model:
+                        logger.error("Аргумент --model обязателен для шага обучения")
+                        step_results['train'] = {
+                            'status': 'error',
+                            'error': 'Аргумент --model не указан'
+                        }
+                        return
+                    
                     model_dir = os.path.join(args.output_dir, "model")
                     train_defaults = self._get_command_defaults('train', ['--model', '.', '--data-dir', '.'])
                     train_defaults.update(pipeline_config.get("train", {}))

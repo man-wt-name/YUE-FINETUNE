@@ -14,8 +14,8 @@ def create_pipeline_config(args):
             # Параметр "format" был удален, т.к. конвертер жестко сохраняет в .npy
         },
         "preprocess": {
-            "codec_type": "xcodec_16k",
-            "num_codebooks": 4,
+            "codec_type": "semanticodec",
+            "num_codebooks": 2,
             "codebook_size": 2048,
             "workers": 4,
             "stage": "both"

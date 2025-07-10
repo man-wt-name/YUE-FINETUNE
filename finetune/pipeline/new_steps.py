@@ -37,7 +37,14 @@ except ImportError:
 
 # Импортируем собственный модуль с проверкой
 try:
-    from ..tools.codecmanipulator import CodecManipulator
+    # Добавляем путь к tools в sys.path для корректного импорта
+    import sys
+    import os
+    tools_path = os.path.join(os.path.dirname(__file__), '..', 'tools')
+    if tools_path not in sys.path:
+        sys.path.insert(0, tools_path)
+    
+    from codecmanipulator import CodecManipulator
 except ImportError as e:
     print(f"Ошибка импорта CodecManipulator: {e}")
     print("Убедитесь, что структура проекта соответствует ожидаемой.")
