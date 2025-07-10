@@ -2,6 +2,8 @@ import argparse
 import json
 import os
 import sys
+# tqdm выводит прогресс-бар в stdout по умолчанию, что ломает JSON-парсинг.
+# Перенаправляем его в stderr.
 from tqdm import tqdm
 
 # Добавляем путь к родительской директории для импорта core.datasets
@@ -32,7 +34,11 @@ def count_tokens_in_dataset(dataset_path):
 
         # Фоллбэк: итеративный подсчёт (медленнее, но надёжнее).
         token_count = 0
-        for doc_ids in tqdm(dataset, desc=f"Counting tokens in {os.path.basename(dataset_path)}"):
+        for doc_ids in tqdm(
+            dataset,
+            desc=f"Counting tokens in {os.path.basename(dataset_path)}",
+            file=sys.stderr,
+        ):
             token_count += doc_ids.shape[0]
         return token_count
     except Exception as e:

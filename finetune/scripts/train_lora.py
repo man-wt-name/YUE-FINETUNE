@@ -102,11 +102,23 @@ def setup_distributed_training():
         world_size = int(os.environ.get("WORLD_SIZE", "1"))
         
         if world_size > 1:
-            # Multi-GPU setup
-            torch.cuda.set_device(local_rank)
+            # Multi-GPU (или многопроцессорный CPU) запуск
+            backend = "nccl"
+            # NCCL недоступен под Windows; используем 'gloo' и предупреждаем.
+            if os.name == "nt":
+                backend = "gloo"
+                logger.warning("NCCL backend недоступен на Windows. Переключаемся на 'gloo'. Это может замедлить обучение.")
+
+            if torch.cuda.is_available():
+                torch.cuda.set_device(local_rank)
+            else:
+                logger.warning("CUDA не обнаружена – обучение будет выполняться на CPU.")
+
             if not torch.distributed.is_initialized():
-                torch.distributed.init_process_group(backend="nccl")
-            logger.info(f"Distributed training initialized with world size: {world_size}, local rank: {local_rank}")
+                torch.distributed.init_process_group(backend=backend)
+            logger.info(
+                f"Distributed training initialized with world size: {world_size}, local rank: {local_rank}, backend: {backend}"
+            )
         else:
             # Single GPU setup
             logger.info(f"Running on a single GPU (device {local_rank})")

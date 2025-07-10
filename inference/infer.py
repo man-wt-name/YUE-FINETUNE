@@ -1,5 +1,14 @@
 import os
 import sys
+
+# Путь до каталога проекта (один уровень выше ./inference)
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Гарантируем, что корень проекта виден в PYTHONPATH, чтобы можно было импортировать
+# `finetune.*` независимо от каталога, откуда запускается скрипт.
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+# Сторонний кодек-демо лежит рядом с текущим скриптом
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'xcodec_mini_infer'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'xcodec_mini_infer', 'descriptaudiocodec'))
 import re
@@ -17,12 +26,35 @@ import soundfile as sf
 from einops import rearrange
 from transformers import AutoTokenizer, AutoModelForCausalLM, LogitsProcessor, LogitsProcessorList
 from omegaconf import OmegaConf
-from codecmanipulator import CodecManipulator
-from mmtokenizer import _MMSentencePieceTokenizer
-from models.soundstream_hubert_new import SoundStream
-from vocoder import build_codec_model, process_audio
-from post_process_audio import replace_low_freq_with_energy_matched
+from finetune.tools.codecmanipulator import CodecManipulator
+from finetune.core.tokenizer.mmtokenizer import _MMSentencePieceTokenizer
+# --- Robust optional imports -------------------------------------------------
+try:
+    from models.soundstream_hubert_new import SoundStream  # noqa: F401
+except ImportError as e:  # pragma: no cover
+    SoundStream = None  # type: ignore
+    print(f"⚠️  {e}. Stage-2 audio synthesis will be unavailable.")
 
+try:
+    from vocoder import build_codec_model, process_audio  # noqa: F401
+except ImportError as e:  # pragma: no cover
+    def build_codec_model(*args, **kwargs):  # type: ignore
+        raise ImportError("vocoder module is missing; install or add it to PYTHONPATH") from e
+
+    def process_audio(*args, **kwargs):  # type: ignore
+        raise ImportError("vocoder module is missing; install or add it to PYTHONPATH") from e
+
+    print(f"⚠️  {e}. Falling back to stub vocoder functions.")
+
+try:
+    from post_process_audio import replace_low_freq_with_energy_matched  # noqa: F401
+except ImportError as e:  # pragma: no cover
+    def replace_low_freq_with_energy_matched(wav, *args, **kwargs):  # type: ignore
+        # Passthrough stub so that subsequent code can continue.
+        return wav
+
+    print(f"⚠️  {e}. Using identity post-process stub.")
+# ---------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser()
 # Model Configuration:
@@ -489,3 +521,8 @@ replace_low_freq_with_energy_matched(
     c_file=os.path.join(args.output_dir, os.path.basename(recons_mix)),
     cutoff_freq=5500.0
 )
+
+# Console-script entry point. Логика инференса выполняется при импорте, поэтому
+# здесь достаточно pass. Исполняемый скрипт `yue-infer` вызывает эту функцию.
+def cli():  # pragma: no cover
+    pass

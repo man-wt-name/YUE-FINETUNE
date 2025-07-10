@@ -9,8 +9,8 @@ import time
 import tempfile
 
 # --- ИСПРАВЛЕНИЕ: Импортируем из исправленных модулей ---
-from pipeline.new_config import create_pipeline_config
-from pipeline.new_steps import (
+from finetune.pipeline.new_config import create_pipeline_config
+from finetune.pipeline.new_steps import (
     AudioConverter,
     DataPreprocessor,
     DatasetPreparer,
@@ -766,6 +766,12 @@ class YuETrainer:
         # Очищаем устаревшие кэш-файлы
         self._cleanup_old_caches()
 
+# Entry-point wrapper: позволяет запускать `python -m pip install -e .` и получать
+# консольную команду `yue-train`.
+def cli():  # pragma: no cover
+    """Console-script entry point: ``yue-train``."""
+    trainer = YuETrainer()
+    trainer.main()
 
 if __name__ == "__main__":
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

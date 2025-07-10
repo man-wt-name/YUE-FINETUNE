@@ -476,7 +476,7 @@ class DataPreprocessor(PipelineStep):
         if not args.config:
             self.logger.info("Создание конфигурационного файла микро-смеси...")
             mixture_config_path = self._create_mixture_config(
-                data_dir=output_dir,
+                data_dir=data_dir,
                 blend_weights=getattr(args, "blend_weights", None),
                 split=getattr(args, "split", "960,30,10")
             )
@@ -491,7 +491,7 @@ class DataPreprocessor(PipelineStep):
             else:
                 self.logger.warning(f"Указанный конфигурационный файл {args.config} не найден. Создаем стандартный.")
                 mixture_config_path = self._create_mixture_config(
-                    data_dir=output_dir,
+                    data_dir=data_dir,
                     blend_weights=getattr(args, "blend_weights", None),
                     split=getattr(args, "split", "960,30,10")
                 )
@@ -634,14 +634,17 @@ class DatasetPreparer(PipelineStep):
         for bin_file in bin_files:
             target_path = os.path.join(output_dir, bin_file.name)
             try:
-                # Удаляем существующую ссылку, если она есть
-                if os.path.exists(target_path):
-                    if os.path.islink(target_path):
-                        os.unlink(target_path)
+                # Пытаемся создать ссылку (hard link на Windows, symlink на Unix)
+                try:
+                    if os.name == "nt":
+                        # На Windows symlink часто требует прав администратора
+                        os.link(bin_file, target_path)
                     else:
-                        os.remove(target_path)
-                # Создаем символическую ссылку
-                os.symlink(bin_file, target_path)
+                        os.symlink(bin_file, target_path)
+                except (OSError, AttributeError):
+                    # Фоллбэк: копируем файл, если линковка недоступна
+                    import shutil
+                    shutil.copy2(bin_file, target_path)
                 self.logger.debug(f"Создана символическая ссылка: {target_path} -> {bin_file}")
             except (OSError, PermissionError) as e:
                 self.logger.error(f"Ошибка при создании символической ссылки {target_path}: {e}")
@@ -656,14 +659,15 @@ class DatasetPreparer(PipelineStep):
         for idx_file in idx_files:
             target_path = os.path.join(output_dir, idx_file.name)
             try:
-                # Удаляем существующую ссылку, если она есть
-                if os.path.exists(target_path):
-                    if os.path.islink(target_path):
-                        os.unlink(target_path)
+                # Пытаемся создать ссылку (hard link на Windows, symlink на Unix)
+                try:
+                    if os.name == "nt":
+                        os.link(idx_file, target_path)
                     else:
-                        os.remove(target_path)
-                # Создаем символическую ссылку
-                os.symlink(idx_file, target_path)
+                        os.symlink(idx_file, target_path)
+                except (OSError, AttributeError):
+                    import shutil
+                    shutil.copy2(idx_file, target_path)
                 self.logger.debug(f"Создана символическая ссылка: {target_path} -> {idx_file}")
             except (OSError, PermissionError) as e:
                 self.logger.error(f"Ошибка при создании символической ссылки {target_path}: {e}")
@@ -848,7 +852,7 @@ class Trainer(PipelineStep):
         
         train_cmd = [
             sys.executable, train_script,
-            "--model", model_path,
+            "--model_name_or_path", model_path,
             "--data-path", data_dir,
             "--output-dir", output_dir,
             "--num-train-epochs", str(args.epochs),

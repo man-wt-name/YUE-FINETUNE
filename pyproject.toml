@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yue-finetune"
+version = "0.1.0"
+readme = "README.md"
+authors = [{name = "YuE Team"}]
+description = "YuE multimodal finetuning & inference framework"
+requires-python = ">=3.9"
+# Опираемся на существующий requirements.txt
+dependencies = []
+
+[project.scripts]
+yue-train = "run_yue:main"
+yue-infer = "inference.infer:cli"
+
+[tool.setuptools.packages.find]
+# Явно указываем корневой каталог и маски пакетов, чтобы editable-установка
+# отрабатывала корректно даже при сложных путях.
+where = ["."]
+include = ["finetune*", "inference*"] 

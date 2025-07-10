@@ -24,12 +24,8 @@ def main():
     # Добавляем текущую директорию в PYTHONPATH
     env = os.environ.copy()
     
-    # Добавляем пути к finetune и его подмодулям
-    finetune_path = os.path.join(script_dir, "finetune")
-    tools_path = os.path.join(finetune_path, "tools")
-    pipeline_path = os.path.join(finetune_path, "pipeline")
-    
-    pythonpath_parts = [script_dir, finetune_path, tools_path, pipeline_path]
+    # Достаточно добавить корень проекта; импорты используют пакет finetune.*
+    pythonpath_parts = [script_dir]
     
     if 'PYTHONPATH' in env:
         pythonpath_parts.append(env['PYTHONPATH'])

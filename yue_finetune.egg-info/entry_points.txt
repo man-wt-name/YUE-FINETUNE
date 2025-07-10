@@ -1,0 +1,3 @@
+[console_scripts]
+yue-infer = inference.infer:cli
+yue-train = run_yue:main
