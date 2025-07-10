@@ -1,0 +1,50 @@
+# YuE - Multimodal Language Model Finetuning Framework
+# Core ML libraries
+torch>=2.0.0
+torchaudio>=2.0.0
+transformers>=4.30.0
+peft>=0.4.0
+accelerate>=0.20.0
+datasets>=2.12.0
+tokenizers>=0.13.0
+
+# Audio processing
+librosa>=0.10.0
+soundfile>=0.12.0
+einops>=0.6.0
+
+# Scientific computing
+numpy>=1.24.0
+scipy>=1.10.0
+
+# NLP and text processing
+nltk>=3.8.0
+
+# Configuration and serialization
+pyyaml>=6.0
+omegaconf>=2.3.0
+
+# Progress bars and logging
+tqdm>=4.65.0
+colorlog>=6.7.0
+
+# Distributed training
+deepspeed>=0.9.0
+wandb>=0.15.0
+
+# C++ compilation dependencies
+pybind11>=2.10.0
+
+# Development and testing
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Optional: CUDA support (uncomment if using GPU)
+# torch>=2.0.0+cu118 -f https://download.pytorch.org/whl/torch_stable.html
+# torchaudio>=2.0.0+cu118 -f https://download.pytorch.org/whl/torch_stable.html
+
+# System dependencies (install via package manager):
+# - gcc/g++ (for C++ compilation)
+# - make (for Makefile)
+# - python3-dev (for pybind11 headers) 
