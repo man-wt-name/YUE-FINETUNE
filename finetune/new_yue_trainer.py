@@ -89,6 +89,8 @@ class YuETrainer:
         preprocess_parser.add_argument('--workers', type=int, default=4)
         preprocess_parser.add_argument('--stage', default='both', help='Этап XCodec (encode/decode/both)')
         preprocess_parser.add_argument('--shuffle', action='store_true')
+        preprocess_parser.add_argument('--instruction-dropout-rate', type=float, default=0.0, help='Dropout rate for the instruction.')
+        preprocess_parser.add_argument('--to-lower', action='store_true', help='Convert text to lowercase')
 
         # --------------------------------------------------
         # Подготовка датасета
@@ -130,6 +132,7 @@ class YuETrainer:
         train_parser.add_argument('--save-steps', type=int, default=100)
         train_parser.add_argument('--eval-steps', type=int, default=100)
         train_parser.add_argument('--save-total-limit', type=int, default=2)
+        train_parser.add_argument('--seq-length', type=int, default=2048, help='Длина последовательности для модели/датасета')
         train_parser.add_argument('--optimizer', default='adamw_torch_fused')
         train_parser.add_argument('--lora-r', type=int, default=8)
         train_parser.add_argument('--lora-alpha', type=int, default=16)

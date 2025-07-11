@@ -694,10 +694,12 @@ def _add_logging_args(parser):
                        '  all: report timings of all ranks.')
     group.add_argument('--tensorboard-log-interval', type=int, default=1,
                        help='Report to tensorboard interval.')
-    group.add_argument('--tensorboard-queue-size', type=int, default=1000,
-                       help='Size of the tensorboard queue for pending events '
-                       'and summaries before one of the ‘add’ calls forces a '
-                       'flush to disk.')
+    group.add_argument(
+        '--tensorboard-queue-size',
+        type=int,
+        default=1000,
+        help="Size of the tensorboard queue for pending events and summaries before one of the 'add' calls forces a flush to disk."
+    )
     group.add_argument('--log-timers-to-tensorboard', action='store_true',
                        help='If set, write timers to tensorboard.')
     group.add_argument('--log-batch-size-to-tensorboard', action='store_true',
@@ -779,8 +781,8 @@ def _add_finetune_args(parser):
                        help='The name of the run for logging.')
     group.add_argument('--gradient-checkpointing', action='store_true',
                        help='Enable gradient checkpointing.')
-    group.add_argument('--lr-scheduler-type', type=str, default="cosine",
-                       help='The learning rate scheduler to use.')
+    group.add_argument('--lr-scheduler-type-train', type=str, default="cosine",
+                       help='[DEPRECATED] Duplicate of --lr-scheduler-type; will be ignored.')
     group.add_argument('--fp16', action='store_true',
                        help='Run model in fp16 mode.')
     group.add_argument('--bf16', action='store_true',
@@ -869,8 +871,8 @@ def _add_training_args1(parser):
                        ' (1024 - 16) / 8 = 126 intervals will increase'
                        'the batch size linearly to 1024. In each interval'
                        'we will use approximately 300000 / 126 = 2380 samples.')
-    group.add_argument('--lr-scheduler-type ', type=str, default="cosine",
-                       help='The learning rate scheduler to use.')
+    group.add_argument('--lr-scheduler-type-train', type=str, default="cosine",
+                       help='[DEPRECATED] Duplicate of --lr-scheduler-type; will be ignored.')
     return parser
 
 def _add_training_args(parser):

@@ -505,21 +505,27 @@ class DataPreprocessor(PipelineStep):
 
         # Безопасно достаём значения — если их нет, подставляем дефолты.
         workers = getattr(args, "workers", 4)
-        stage = str(getattr(args, "stage", "both"))
 
         preprocess_cmd = [
             sys.executable, preprocess_script,
-            "--input-json-dir", jsonl_dir,
+            "--input", jsonl_dir,
             "--output-prefix", os.path.join(output_dir, os.path.basename(jsonl_dir)),
-            "--dataset-impl", "mmap",
             "--tokenizer-type", "MMSentencePieceTokenizer",
+            "--tokenizer-model", os.path.join(project_root, "inference", "mm_tokenizer_v0.2_hf", "tokenizer.model"),
+            "--codec-type", getattr(args, "codec_type", "semanticodec"),
+            "--order", "textfirst",
             "--workers", str(workers),
-            "--stage", stage,
+            "--json-keys", "text",
+            "--append-eod",
         ]
 
-        if getattr(args, "shuffle", False):
-            preprocess_cmd.append("--shuffle")
+        # Добавляем опциональные параметры, если они указаны
+        if getattr(args, "instruction_dropout_rate", 0.0) > 0.0:
+            preprocess_cmd.extend(["--instruction-dropout-rate", str(args.instruction_dropout_rate)])
         
+        if getattr(args, "to_lower", False):
+            preprocess_cmd.append("--to-lower")
+
         self.logger.info(f"Выполнение команды: {' '.join(preprocess_cmd)}")
         try:
             subprocess.run(preprocess_cmd, check=True)
@@ -769,6 +775,9 @@ class Trainer(PipelineStep):
         if args.epochs <= 0:
             raise ValueError(f"Количество эпох должно быть положительным числом: {args.epochs}")
         
+        if getattr(args, "seq_length", 0) <= 0:
+            raise ValueError(f"Длина последовательности (--seq-length) должна быть положительным числом: {getattr(args, 'seq_length', None)}")
+        
         if args.batch_size <= 0:
             raise ValueError(f"Размер батча должен быть положительным числом: {args.batch_size}")
         
@@ -848,7 +857,7 @@ class Trainer(PipelineStep):
         
         train_cmd = [
             sys.executable, train_script,
-            "--model", model_path,
+            "--model-name-or-path", model_path,
             "--data-path", data_dir,
             "--output-dir", output_dir,
             "--num-train-epochs", str(args.epochs),
@@ -867,10 +876,13 @@ class Trainer(PipelineStep):
             "--lora-dropout", str(args.lora_dropout),
         ]
         
-        # Добавляем опциональные аргументы
+        # Добавляем список целевых модулей для LoRA одной опцией
         if args.lora_target_modules:
-            for module in args.lora_target_modules:
-                train_cmd.extend(["--lora-target-modules", module])
+            train_cmd.extend(["--lora-target-modules"] + list(args.lora_target_modules))
+        
+        # Передаём длину последовательности, если указана
+        if getattr(args, "seq_length", None):
+            train_cmd.extend(["--seq-length", str(args.seq_length)])
         
         if args.fp16:
             train_cmd.append("--fp16")

@@ -18,7 +18,9 @@ def create_pipeline_config(args):
             "num_codebooks": 2,
             "codebook_size": 2048,
             "workers": 4,
-            "stage": "both"
+            "stage": "both",
+            "instruction_dropout_rate": 0.0,
+            "to_lower": False
         },
         "dataset": {
             "split": "960,30,10",
